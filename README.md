@@ -14,7 +14,7 @@
 $ pip install logingovpl
 ```
 
-2. Dodaj `logingovpl` do `INSTALLED_APPS:
+2. Dodaj `logingovpl` do `INSTALLED_APPS`:
 
 ```
 INSTALLED_APPS = [
