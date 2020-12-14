@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+recursive-include logingovpl/templates *
+recursive-include logingovpl/static *
+recursive-exclude example *

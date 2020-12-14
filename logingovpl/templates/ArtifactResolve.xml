@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+  <soap:Body>
+      <saml2p:ArtifactResolve xmlns:coi-extension="http://coi.gov.pl/saml-extensions" xmlns:coi-naturalperson="http://coi.gov.pl/attributes/naturalperson" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dsig11="http://www.w3.org/2009/xmldsig11#" xmlns:eidas="http://eidas.europa.eu/saml-extensions" xmlns:kirwb="http://wb.kir.pl/saml-extensions" xmlns:naturalperson="http://eidas.europa.eu/attributes/naturalperson" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xenc11="http://www.w3.org/2009/xmlenc11#" ID="ID-2062b5c4-87ac-482a-af14-f94e0197dab3" IssueInstant="{{ artifact_resolve_issue_instant }}" Version="2.0">
+          <saml2:Issuer>{{ issuer }}</saml2:Issuer>
+      <saml2p:Artifact>{{ artifact_resolve_artifact }}</saml2p:Artifact>
+    </saml2p:ArtifactResolve>
+  </soap:Body>
+</soap:Envelope>
