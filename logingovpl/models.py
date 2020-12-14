@@ -1,1 +1,1 @@
-from .conf import LoginGovPLConf  # noqa
+from .conf import LoginGovPLConf  # noqa: F401
