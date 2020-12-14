@@ -3,22 +3,24 @@
 [![gitmoji](https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg?style=flat-square)](https://gitmoji.carloscuesta.me)
 
 
-===================
-Django Login.gov.pl
-===================
+# Django Login.gov.pl
 
-Instalacja
-----------
+
+## Instalacja
 
 1. Korzystając z Python Package Index:
 
-   $ pip install logingovpl
+```
+$ pip install logingovpl
+```
 
 2. Dodaj `logingovpl` do `INSTALLED_APPS:
 
-    INSTALLED_APPS = [
-        ...
-        'logingovpl',
-    ]
+```
+INSTALLED_APPS = [
+    ...
+    'logingovpl',
+]
+```
 
 3. Konfiguracja:
