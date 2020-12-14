@@ -25,7 +25,7 @@ setup(
     include_package_data=True,
     license='MIT license',  # example license
     description='Django Login.gov.pl auth',
-    long_description=README,
+    # long_description=README,
     url='https://github.com/kuter/django-logingovpl',
     author='kuter',
     author_email='contact@devktr.pl',
