@@ -1,23 +1,24 @@
-[![build status](http://gitlab/kuter/logingovpl/badges/master/build.svg)](http://gitlab/kuter/logingovpl/commits/master)
-[![coverage report](http://gitlab/kuter/logingovpl/badges/master/coverage.svg)](http://gitlab/kuter/logingovpl/commits/master)
-=====
-Django Login.gov.pl auth
-=============================
-Third-party app created with https://github.com/kuter/django-plugin-template-cookiecutter
+[![LICENSE](https://img.shields.io/pypi/l/version_control.svg?style=flat-square)](https://raw.githubusercontent.com/kuter/django-version-control/master/LICENSE)
+[![wemake-python-styleguide](https://img.shields.io/badge/style-wemake-000000.svg?style=flat-square)](https://github.com/wemake-services/wemake-python-styleguide)
+[![gitmoji](https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg?style=flat-square)](https://gitmoji.carloscuesta.me)
 
-Quick start
------------
-1. Add "logingovpl" to your INSTALLED_APPS setting like this::
+
+===================
+Django Login.gov.pl
+===================
+
+Instalacja
+----------
+
+1. Korzystając z Python Package Index:
+
+   $ pip install logingovpl
+
+2. Dodaj `logingovpl` do `INSTALLED_APPS:
 
     INSTALLED_APPS = [
         ...
         'logingovpl',
     ]
-2. Include the polls URLconf in your project urls.py like this::
 
-    path('logingovpl/', include('logingovpl.urls')),
-
-3. Run `python manage.py migrate` to create the logingovpl models.
-4. Start the development server and visit http://127.0.0.1:8000/admin/
-to create a logingovpl object (you'll need the Admin app enabled).
-5. Visit http://127.0.0.1:8000/logingovpl/.
+3. Konfiguracja:
