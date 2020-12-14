@@ -70,17 +70,24 @@ class ACSView(FormView):
     http_method_names = ['post']
     form_class = ACSForm
 
-    def success(self, response):
-        login_gov_pl_user = get_user(response.content)
+    def success(self, logingovpl_user):
+        """Get or create user and login into the site.
+
+        Args:
+            logingovpl_user (LoginGovPlUser): data from ACS response
+
+        Returns:
+            HttpResponseRedirect: settings.LOGIN_REDIRECT_URL
+        """
         try:
             user = get_user_model().objects.get(
-                username=login_gov_pl_user.pesel,
+                username=logingovpl_user.pesel,
             )
         except ObjectDoesNotExist:
             user = get_user_model().objects.create_user(
-                username=login_gov_pl_user.pesel,
-                first_name=login_gov_pl_user.first_name,
-                last_name=login_gov_pl_user.last_name,
+                username=logingovpl_user.pesel,
+                first_name=logingovpl_user.first_name,
+                last_name=logingovpl_user.last_name,
             )
         login(self.request, user)
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
@@ -123,7 +130,8 @@ class ACSView(FormView):
         if status_code != SUCCESS:
             return self.error(response)
 
-        return self.success(response)
+        logingovpl_user = get_user(response.content)
+        return self.success(logingovpl_user)
 
     def form_invalid(self, form):
         logger.error('Invalid response from IDP %s', form.errors)  # noqa

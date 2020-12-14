@@ -14,7 +14,7 @@ setup(
     version='0.0.1',
     packages=find_packages(exclude=['*.swp']),
     install_requires=[
-        'Django >=2.1,<2.2',
+        'Django >=2.2',
         'django-appconf',
         'xmlsec',
         'defusedxml',
@@ -25,7 +25,6 @@ setup(
     include_package_data=True,
     license='MIT license',  # example license
     description='Django Login.gov.pl auth',
-    # long_description=README,
     url='https://github.com/kuter/django-logingovpl',
     author='kuter',
     author_email='contact@devktr.pl',

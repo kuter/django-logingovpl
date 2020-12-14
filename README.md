@@ -23,4 +23,13 @@ INSTALLED_APPS = [
 ]
 ```
 
+3. Uzupełnij `urls.py` projektu:
+
+```
+urlpatterns = [
+    ...
+    path('logingovpl/', include('logingovpl.urls')),
+]
+```
+
 3. Konfiguracja:
