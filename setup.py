@@ -11,7 +11,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django_logingovpl',
-    version='0.0.0',
+    version='0.0.1',
     packages=find_packages(exclude=['*.swp']),
     install_requires=[
         'Django >=2.1,<2.2',
