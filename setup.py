@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 
 setup(
-    name='logingovpl',
+    name='django_logingovpl',
     version='0.0.0',
     packages=find_packages(exclude=['*.swp']),
     install_requires=[
@@ -25,15 +25,15 @@ setup(
     include_package_data=True,
     license='MIT license',  # example license
     description='Django Login.gov.pl auth',
-    url='https://www.example.com/',
+    long_description=README,
+    url='https://github.com/kuter/django-logingovpl',
     author='kuter',
-    author_email='kuter@example.com',
+    author_email='contact@devktr.pl',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
         'Framework :: Django :: 2.1',  # replace "X.Y" as appropriate
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT license',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
