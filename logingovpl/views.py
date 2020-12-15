@@ -18,7 +18,7 @@ from django.views.generic import FormView
 import requests
 
 from .forms import ACSForm
-from .services import get_user
+from .services import get_user, decode_cipher_value
 from .statuses import SUCCESS
 from .utils import (
     add_sign,
@@ -37,6 +37,7 @@ def sso(request):
         HttpResponse: redirect to IDP auth view
     """
     authn_request_id = 'ID-{}'.format(uuid.uuid4())
+    logger.debug('auth_request: %s', authn_request_id)
     relay_state = get_relay_state()
 
     xml = render_to_string(
@@ -130,7 +131,8 @@ class ACSView(FormView):
         if status_code != SUCCESS:
             return self.error(response)
 
-        logingovpl_user = get_user(response.content)
+        decoded_content = decode_cipher_value(response.content)
+        logingovpl_user = get_user(decoded_content)
         return self.success(logingovpl_user)
 
     def form_invalid(self, form):

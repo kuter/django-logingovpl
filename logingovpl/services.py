@@ -28,16 +28,34 @@ def get_otherinfo(concat_kdf_params):
         string: concatenated AlgorithmID, PartyUInfo, PartyVInfo
 
     """
-    attrib = concat_kdf_params.attrib
-    AlgorithmID = attrib['AlgorithmID']
-    PartyUInfo = attrib['PartyUInfo']
-    PartyVInfo = attrib['PartyVInfo']
-    otherinfo = ''.join([AlgorithmID, PartyUInfo, PartyVInfo])
-    logger.debug('otherinfo: %s', otherinfo)
+    otherinfo = ''.join([
+        concat_kdf_params.attrib['AlgorithmID'],
+        concat_kdf_params.attrib['PartyUInfo'],
+        concat_kdf_params.attrib['PartyVInfo'],
+    ])
     return otherinfo
 
 
 def get_user(content):
+    """Return LoginGovPlUser instance based on ArtifactResponse.
+
+    Args:
+        content (str): decoded cipher value
+
+    Returns:
+        LoginGovPlUser: user object
+    """
+    tree = ET.fromstring(content)
+
+    first_name = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:CurrentGivenNameType"]').text
+    last_name = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:CurrentFamilyNameType"]').text
+    date_of_birth = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:DateOfBirthType"]').text
+    pesel = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:PersonIdentifierType"]').text
+
+    return LoginGovPlUser(first_name, last_name, date_of_birth, pesel)
+
+
+def decode_cipher_value(content):
     """Get user from ACS service response.
 
     Args:
@@ -66,13 +84,14 @@ def get_user(content):
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
-    logger.debug('Peer public key:\n%s', peer_public_key_pem.decode())
+    logger.debug('peer public key:\n%s', peer_public_key_pem.decode())
 
     shared_key = server_private_key.exchange(
         ec.ECDH(), peer_public_key)
-    logger.debug('Shared key: %s', shared_key)
+    logger.debug('shared key: %s', shared_key)
 
     otherinfo = get_otherinfo(concatKDFParams)
+    logger.debug('otherinfo: %s', otherinfo)
 
     ckdf = ConcatKDFHash(
         algorithm=hashes.SHA256(),
@@ -83,7 +102,7 @@ def get_user(content):
 
     cipher_bytes = base64.b64decode(CIPHER_VALUE)
     wrapping_key = ckdf.derive(shared_key)
-    logger.debug("Wrapping key: %s", wrapping_key)
+    logger.debug('wrapping key: %s', wrapping_key)
 
     session_key = aes_key_unwrap(wrapping_key, cipher_bytes, default_backend())
     user_attr_bytes = base64.b64decode(USER_ATTRS)
@@ -91,12 +110,4 @@ def get_user(content):
     cipher = AES.new(session_key, AES.MODE_GCM, nonce)
     decoded_saml = cipher.decrypt_and_verify(user_attr_bytes[12:-16], tag)
 
-    tree = ET.fromstring(decoded_saml)
-
-    first_name = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:CurrentGivenNameType"]').text
-    last_name = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:CurrentFamilyNameType"]').text
-    date_of_birth = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:DateOfBirthType"]').text
-    pesel = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:PersonIdentifierType"]').text
-
-    user = LoginGovPlUser(first_name, last_name, date_of_birth, pesel)
-    return user
+    return decoded_saml
