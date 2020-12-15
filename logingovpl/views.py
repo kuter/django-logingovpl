@@ -13,7 +13,7 @@ from django.http import (
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import FormView
+from django.views.generic import FormView, TemplateView
 
 import requests
 
@@ -30,40 +30,45 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-def sso(request):
-    """Signle sign-on view.
+class SSOView(TemplateView):
+    """Single sign-on view.
 
     Returns:
         HttpResponse: redirect to IDP auth view
     """
-    authn_request_id = 'ID-{}'.format(uuid.uuid4())
-    logger.debug('auth_request: %s', authn_request_id)
-    relay_state = get_relay_state()
 
-    xml = render_to_string(
-        'AuthnRequest.xml',
-        {
-            'authn_request_id': authn_request_id,
-            'authn_request_issue_instant': get_issue_instant(),
-            'issuer': settings.LOGINGOVPL_ISSUER,
-            'sso_url': settings.LOGINGOVPL_SSO_URL,
-            'acs_url': settings.LOGINGOVPL_ASSERTION_CONSUMER_URL,
-        },
-    )
+    http_method_names = ['get']
+    template_name = 'Envelop.html'
 
-    signed = add_sign(
-        xml, settings.LOGINGOVPL_ENC_KEY, settings.LOGINGOVPL_ENC_CERT,
-    )
+    def get_authn_request_id(self):
+        authn_request_id = 'ID-{}'.format(uuid.uuid4())
+        logger.debug('auth_request: %s', authn_request_id)
+        return authn_request_id
 
-    data = render_to_string(
-        'Envelop.html',
-        {
+    def get_signed_authn_request(self):
+        xml = render_to_string(
+            'AuthnRequest.xml',
+            {
+                'authn_request_id': self.get_authn_request_id(),
+                'authn_request_issue_instant': get_issue_instant(),
+                'issuer': settings.LOGINGOVPL_ISSUER,
+                'sso_url': settings.LOGINGOVPL_SSO_URL,
+                'acs_url': settings.LOGINGOVPL_ASSERTION_CONSUMER_URL,
+            },
+        )
+
+        return add_sign(
+            xml, settings.LOGINGOVPL_ENC_KEY, settings.LOGINGOVPL_ENC_CERT,
+        )
+
+    def get_context_data(self, **kwargs):
+        relay_state = get_relay_state()
+        signed = self.get_signed_authn_request()
+
+        return {
             'envelop': base64.b64encode(signed.encode()).decode(),
             'relay_state': relay_state,
-        },
-    )
-
-    return HttpResponse(data)
+        }
 
 
 @method_decorator(csrf_exempt, name='dispatch')
