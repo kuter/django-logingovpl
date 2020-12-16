@@ -4,9 +4,19 @@ from django.conf import settings
 from django.template.loader import render_to_string
 
 import requests
+import urllib3
 
 from .services import add_sign
 from .utils import get_issue_instant
+
+requests.packages.urllib3.disable_warnings()
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+
+try:
+    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+except AttributeError:
+    # no pyopenssl support used / needed / available
+    pass
 
 logger = logging.getLogger(__name__)
 
