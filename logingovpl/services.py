@@ -1,7 +1,6 @@
 import base64
 import binascii
 import logging
-from xml.etree import ElementTree as ET
 
 from django.conf import settings
 
@@ -12,8 +11,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.concatkdf import ConcatKDFHash
 from cryptography.hazmat.primitives.keywrap import aes_key_unwrap
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
-
-from .objects import LoginGovPlUser
+from defusedxml.lxml import fromstring, tostring
+import xmlsec
 
 logger = logging.getLogger(__name__)
 
@@ -36,25 +35,6 @@ def get_otherinfo(concat_kdf_params):
     return otherinfo
 
 
-def get_user(content):
-    """Return LoginGovPlUser instance based on ArtifactResponse.
-
-    Args:
-        content (str): decoded cipher value
-
-    Returns:
-        LoginGovPlUser: user object
-    """
-    tree = ET.fromstring(content)
-
-    first_name = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:CurrentGivenNameType"]').text
-    last_name = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:CurrentFamilyNameType"]').text
-    date_of_birth = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:DateOfBirthType"]').text
-    pesel = tree.find('.//{urn:oasis:names:tc:SAML:2.0:assertion}AttributeValue[@{http://www.w3.org/2001/XMLSchema-instance}type="naturalperson:PersonIdentifierType"]').text
-
-    return LoginGovPlUser(first_name, last_name, date_of_birth, pesel)
-
-
 def decode_cipher_value(content):
     """Get user from ACS service response.
 
@@ -65,7 +45,7 @@ def decode_cipher_value(content):
         tuple: first_name, last_name, DOB, PESEL
 
     """
-    tree = ET.fromstring(content)
+    tree = fromstring(content)
 
     PUBLIC_KEY = tree.find('.//{http://www.w3.org/2009/xmldsig11#}PublicKey').text
     CIPHER_VALUE = tree.find('.//{http://www.w3.org/2001/04/xmlenc#}CipherValue').text
@@ -73,7 +53,9 @@ def decode_cipher_value(content):
     concatKDFParams = tree.find('.//{http://www.w3.org/2009/xmlenc11#}ConcatKDFParams')
 
     with open(settings.LOGINGOVPL_ENC_KEY, 'rb') as f:
-        server_private_key = load_pem_private_key(f.read(), None, default_backend())
+        server_private_key = load_pem_private_key(
+            f.read(), None, default_backend(),
+        )
 
     public_key_bytes = base64.b64decode(PUBLIC_KEY)
     curve = ec.SECP256R1()
@@ -109,5 +91,66 @@ def decode_cipher_value(content):
     nonce, tag = user_attr_bytes[:12], user_attr_bytes[-16:]
     cipher = AES.new(session_key, AES.MODE_GCM, nonce)
     decoded_saml = cipher.decrypt_and_verify(user_attr_bytes[12:-16], tag)
+    logger.debug(decoded_saml)
 
     return decoded_saml
+
+
+def add_sign(xml, key, cert, debug=False):
+    """Add sign.
+
+    Args:
+        xml (str): SAML assertion
+        key (Path): path enc key
+        cert (Path): path to cert/pem
+        debug (boolean): xmlsec enable debug trace
+
+    Returns:
+        str: signed SAML assertion
+
+    Raises:
+        Exception: if xml is empty
+    """
+    if xml is None or xml == '':
+        raise Exception('Empty string supplied as input')
+
+    elem = fromstring(xml.encode('utf-8'), forbid_dtd=True)
+
+    sign_algorithm_transform = xmlsec.Transform.ECDSA_SHA256
+
+    signature = xmlsec.template.create(
+        elem, xmlsec.Transform.EXCL_C14N, sign_algorithm_transform, ns='ds',
+    )
+
+    issuer = elem.findall('.//{urn:oasis:names:tc:SAML:2.0:assertion}Issuer')
+    if issuer:
+        issuer = issuer[0]
+        issuer.addnext(signature)
+        elem_to_sign = issuer.getparent()
+
+    elem_id = elem_to_sign.get('ID', None)
+    if elem_id is not None:
+        if elem_id:
+            elem_id = f'#{elem_id}'
+
+    xmlsec.enable_debug_trace(debug)
+    xmlsec.tree.add_ids(elem_to_sign, ['ID'])
+
+    digest_algorithm_transform = xmlsec.Transform.SHA256
+
+    ref = xmlsec.template.add_reference(
+        signature, digest_algorithm_transform, uri=elem_id,
+    )
+    xmlsec.template.add_transform(ref, xmlsec.Transform.ENVELOPED)
+    xmlsec.template.add_transform(ref, xmlsec.Transform.EXCL_C14N)
+    key_info = xmlsec.template.ensure_key_info(signature)
+    xmlsec.template.add_x509_data(key_info)
+
+    dsig_ctx = xmlsec.SignatureContext()
+    sign_key = xmlsec.Key.from_file(key, xmlsec.KeyFormat.PEM, None)
+    sign_key.load_cert_from_file(cert, xmlsec.KeyFormat.PEM)
+
+    dsig_ctx.key = sign_key
+    dsig_ctx.sign(signature)
+
+    return tostring(elem).decode()

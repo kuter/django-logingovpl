@@ -5,26 +5,22 @@ import uuid
 from django.conf import settings
 from django.contrib.auth import get_user_model, login
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import (
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseRedirect,
-)
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, TemplateView
 
-import requests
-
 from .forms import ACSForm
-from .services import get_user, decode_cipher_value
+from .services import add_sign, decode_cipher_value
+from .mixins import ACSMixin
 from .statuses import SUCCESS
 from .utils import (
-    add_sign,
+    get_in_response_to,
     get_issue_instant,
     get_relay_state,
     get_status_code,
+    get_user,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,15 +68,16 @@ class SSOView(TemplateView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ACSView(FormView):
+class ACSView(ACSMixin, FormView):
     http_method_names = ['post']
     form_class = ACSForm
 
-    def success(self, logingovpl_user):
+    def success(self, logingovpl_user, in_response_to=None):
         """Get or create user and login into the site.
 
         Args:
             logingovpl_user (LoginGovPlUser): data from ACS response
+            in_response_to (str): in response to AuthnRequestID
 
         Returns:
             HttpResponseRedirect: settings.LOGIN_REDIRECT_URL
@@ -102,32 +99,6 @@ class ACSView(FormView):
         status_code = get_status_code(response.content)
         return HttpResponseBadRequest(status_code)
 
-    def resolve_artifact(self, saml_art):
-        xml = render_to_string(
-            'ArtifactResolve.xml',
-            {
-                'artifact_resolve_issue_instant': get_issue_instant(),
-                'artifact_resolve_artifact': saml_art,
-                'issuer': settings.LOGINGOVPL_ISSUER,
-            },
-        )
-
-        signed = add_sign(
-            xml, settings.LOGINGOVPL_ENC_KEY, settings.LOGINGOVPL_ENC_CERT,
-        )
-
-        try:
-            response = requests.post(
-                settings.LOGINGOVPL_ARTIFACT_RESOLVE_URL,
-                data=signed,
-                timeout=settings.LOGINGOVPL_TIMEOUT,
-            )
-        except requests.RequestException:
-            logger.exception('ArtifactResolve service request failed:')
-            raise
-
-        return response
-
     def form_valid(self, form):
         saml_art = form.cleaned_data['SAMLart']
         response = self.resolve_artifact(saml_art)
@@ -138,7 +109,8 @@ class ACSView(FormView):
 
         decoded_content = decode_cipher_value(response.content)
         logingovpl_user = get_user(decoded_content)
-        return self.success(logingovpl_user)
+        in_response_to = get_in_response_to(decoded_content)
+        return self.success(logingovpl_user, in_response_to)
 
     def form_invalid(self, form):
         logger.error('Invalid response from IDP %s', form.errors)  # noqa
