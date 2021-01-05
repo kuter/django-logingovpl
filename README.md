@@ -33,3 +33,30 @@ urlpatterns = [
 ```
 
 3. Konfiguracja:
+
+Scieżki do kluczy ECSA:
+
+```
+LOGINGOVPL_ENC_KEY = "pki/MinisterstwoCyfryzacji_MinisterstwoCyfryzacji_enc_ec.key"
+LOGINGOVPL_ENC_CERT = "pki/MinisterstwoCyfryzacji_MinisterstwoCyfryzacji_enc_ec.pem"
+```
+
+Adres dostawcy tożsamości (domyślnie adres symulatora):
+
+```
+LOGINGOVPL_ARTIFACT_RESOLVE_URL = "https://symulator.login.gov.pl/login-services/idpArtifactResolutionService"
+LOGINGOVPL_SSO_URL = "https://symulator.login.gov.pl/login/SingleSignOnService"
+```
+
+Adres po stronie dostawcy usługi na który wysyłana jest asercja:
+
+```
+LOGINGOVPL_ASSERTION_CONSUMER_URL = "http://kro-dev.kronika.gov.pl/idp"
+```
+
+Identyfikator dostawcy usługi:
+
+```
+LOGINGOVPL_ISSUER = "MinisterstwoCyfryzacji"
+```
+
