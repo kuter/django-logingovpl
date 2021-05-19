@@ -10,13 +10,13 @@
 
 1. Korzystając z Python Package Index:
 
-```
+```bash
 $ pip install logingovpl
 ```
 
 2. Dodaj `logingovpl` do `INSTALLED_APPS`:
 
-```
+```python
 INSTALLED_APPS = [
     ...
     'logingovpl',
@@ -25,7 +25,7 @@ INSTALLED_APPS = [
 
 3. Uzupełnij `urls.py` projektu:
 
-```
+```python
 urlpatterns = [
     ...
     path('logingovpl/', include('logingovpl.urls')),
@@ -36,27 +36,27 @@ urlpatterns = [
 
 Scieżki do kluczy ECSA:
 
-```
+```python
 LOGINGOVPL_ENC_KEY = "pki/MinisterstwoCyfryzacji_MinisterstwoCyfryzacji_enc_ec.key"
 LOGINGOVPL_ENC_CERT = "pki/MinisterstwoCyfryzacji_MinisterstwoCyfryzacji_enc_ec.pem"
 ```
 
 Adres dostawcy tożsamości (domyślnie adres symulatora):
 
-```
+```python
 LOGINGOVPL_ARTIFACT_RESOLVE_URL = "https://symulator.login.gov.pl/login-services/idpArtifactResolutionService"
 LOGINGOVPL_SSO_URL = "https://symulator.login.gov.pl/login/SingleSignOnService"
 ```
 
 Adres po stronie dostawcy usługi na który wysyłana jest asercja:
 
-```
+```python
 LOGINGOVPL_ASSERTION_CONSUMER_URL = "http://kro-dev.kronika.gov.pl/idp"
 ```
 
 Identyfikator dostawcy usługi:
 
-```
+```python
 LOGINGOVPL_ISSUER = "MinisterstwoCyfryzacji"
 ```
 
